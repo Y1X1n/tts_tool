@@ -62,7 +62,9 @@ async def get_audio(filename: str):
     filepath = os.path.join(tts_client.AUDIO_DIR, filename)
     if not os.path.exists(filepath):
         raise HTTPException(404, "音频文件不存在")
-    return FileResponse(filepath, media_type="audio/mpeg")
+    ext = filename.rsplit(".", 1)[-1].lower() if "." in filename else "wav"
+    mime = "audio/wav" if ext == "wav" else "audio/mpeg"
+    return FileResponse(filepath, media_type=mime)
 
 
 @router.post("/upload")

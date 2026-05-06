@@ -1,7 +1,7 @@
 import re
-import io
 import os
 import uuid
+import base64
 import aiohttp
 import asyncio
 
@@ -38,15 +38,14 @@ async def generate_tts(
     pitch: float = 0.0,
 ) -> str:
     """
-    Generate TTS audio from text. Supports long text by splitting into segments,
-    generating each, and merging. Returns the output filename (relative to AUDIO_DIR).
+    Generate TTS audio from text. Returns the output filename (relative to AUDIO_DIR).
     """
     segments = split_text(text)
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     if len(segments) == 1:
         audio_bytes = await _request_tts(session, api_url, headers, segments[0], voice, speed, pitch)
-        filename = f"{uuid.uuid4().hex}.mp3"
+        filename = f"{uuid.uuid4().hex}.wav"
         filepath = os.path.join(AUDIO_DIR, filename)
         with open(filepath, "wb") as f:
             f.write(audio_bytes)
@@ -63,7 +62,7 @@ async def generate_tts(
         audio_chunks.append(r)
 
     merged = b"".join(audio_chunks)
-    filename = f"{uuid.uuid4().hex}.mp3"
+    filename = f"{uuid.uuid4().hex}.wav"
     filepath = os.path.join(AUDIO_DIR, filename)
     with open(filepath, "wb") as f:
         f.write(merged)
@@ -79,20 +78,31 @@ async def _request_tts(
     speed: float,
     pitch: float,
 ) -> bytes:
+    """Call TTS API via chat/completions format, decode base64 WAV audio."""
     payload = {
-        "model": "tts-1",
-        "input": text,
-        "voice": voice,
-        "speed": speed,
+        "model": voice,
+        "messages": [
+            {"role": "user", "content": text},
+            {"role": "assistant", "content": ""},
+        ],
     }
-    # OpenAI TTS doesn't have a native pitch param, but custom APIs may support it
+    if speed != 1.0:
+        payload["speed"] = speed
     if pitch != 0.0:
         payload["pitch"] = pitch
 
-    async with session.post(f"{api_url.rstrip('/')}/audio/speech", json=payload, headers=headers) as resp:
+    async with session.post(
+        f"{api_url.rstrip('/')}/chat/completions", json=payload, headers=headers
+    ) as resp:
         if resp.status != 200:
             body = await resp.text()
             raise RuntimeError(f"TTS API error {resp.status}: {body[:500]}")
-        return await resp.read()
+        data = await resp.json()
+
+    try:
+        b64 = data["choices"][0]["message"]["audio"]["data"]
+        return base64.b64decode(b64)
+    except (KeyError, IndexError, TypeError) as e:
+        raise RuntimeError(f"Unexpected API response format: {e}")
 
 
