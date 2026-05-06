@@ -2,6 +2,7 @@ import re
 import os
 import uuid
 import base64
+import json
 import aiohttp
 import asyncio
 
@@ -85,6 +86,7 @@ async def _request_tts(
             {"role": "user", "content": text},
             {"role": "assistant", "content": ""},
         ],
+        "stream": False,
     }
     if speed != 1.0:
         payload["speed"] = speed
@@ -97,7 +99,30 @@ async def _request_tts(
         if resp.status != 200:
             body = await resp.text()
             raise RuntimeError(f"TTS API error {resp.status}: {body[:500]}")
-        data = await resp.json()
+        raw_body = await resp.text()
+
+    # Some APIs may stream multiple JSON objects (thinking + audio).
+    # Take the last object that contains audio data.
+    data = None
+    for line in raw_body.strip().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        # Skip SSE "data: " prefix if present
+        if line.startswith("data: "):
+            line = line[6:]
+        try:
+            obj = json.loads(line)
+            if "choices" in obj:
+                data = obj
+        except Exception:
+            continue
+
+    if data is None:
+        try:
+            data = json.loads(raw_body)
+        except Exception:
+            raise RuntimeError("Failed to parse API response")
 
     try:
         b64 = data["choices"][0]["message"]["audio"]["data"]
