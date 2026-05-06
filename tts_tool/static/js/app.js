@@ -264,12 +264,14 @@ async function generate() {
 }
 
 // ============ Visualizer ============
+let _visualizerSetup = false;
+
 function setupVisualizer() {
+  if (_visualizerSetup) return;
+  _visualizerSetup = true;
+
   const audio = dom.audioPlayer;
   const viz = dom.visualizer;
-
-  // Simulated visualizer since we don't have Web Audio API for file playback
-  // Animate based on playback state
   const bars = $$('span', viz);
 
   audio.addEventListener('play', () => {
