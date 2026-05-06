@@ -226,8 +226,9 @@ async function generate() {
     });
 
     if (!res.ok) {
-      const e = await res.json();
-      throw new Error(e.detail || '生成失败');
+      let msg = '生成失败';
+      try { const e = await res.json(); msg = e.detail || msg; } catch (_) {}
+      throw new Error(msg);
     }
 
     const data = await res.json();

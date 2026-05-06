@@ -35,11 +35,14 @@ async def generate(body: TTSRequest):
     if not body.voice.strip():
         raise HTTPException(400, "请输入模型/音色名称")
 
-    async with aiohttp.ClientSession() as session:
-        filename = await tts_client.generate_tts(
-            session, cfg["api_url"], cfg["api_key"],
-            body.text, body.voice, body.speed, body.pitch,
-        )
+    try:
+        async with aiohttp.ClientSession() as session:
+            filename = await tts_client.generate_tts(
+                session, cfg["api_url"], cfg["api_key"],
+                body.text, body.voice, body.speed, body.pitch,
+            )
+    except Exception as e:
+        raise HTTPException(502, f"TTS API 调用失败: {e}")
 
     conn = database.get_conn()
     cur = conn.execute(
