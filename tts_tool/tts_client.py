@@ -83,8 +83,8 @@ async def _request_tts(
     payload = {
         "model": voice,
         "messages": [
-            {"role": "user", "content": text},
-            {"role": "assistant", "content": ""},
+            {"role": "user", "content": "请将以下文字转为语音"},
+            {"role": "assistant", "content": text},
         ],
         "stream": False,
     }
