@@ -226,14 +226,19 @@ async function generate() {
     });
 
     if (!res.ok) {
-      let msg = '生成失败';
-      try { const e = await res.json(); msg = e.detail || msg; } catch (_) {}
+      let msg = `请求失败 (HTTP ${res.status})`;
+      try {
+        const err = await res.json();
+        msg = err.detail || msg;
+      } catch (_) {
+        try { msg = await res.text(); } catch (__) {}
+      }
+      console.error('TTS API error:', msg);
       throw new Error(msg);
     }
 
     const data = await res.json();
 
-    // Show player
     const audioSrc = `/api/tts/audio/${data.filename}`;
     dom.audioPlayer.src = audioSrc;
     dom.downloadLink.href = audioSrc;
@@ -241,14 +246,14 @@ async function generate() {
     dom.playerCard.hidden = false;
     dom.statusText.textContent = '生成完成';
 
-    // Start visualizer
     setupVisualizer();
     dom.audioPlayer.play();
 
     showToast('语音合成完成', 'success');
   } catch (e) {
+    console.error('Generate error:', e);
     showToast(e.message || '生成失败', 'error');
-    dom.statusText.textContent = '生成失败';
+    dom.statusText.textContent = e.message || '生成失败';
   } finally {
     state.generating = false;
     dom.generateBtn.classList.remove('generating');
