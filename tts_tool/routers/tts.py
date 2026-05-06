@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api", tags=["tts"])
 
 class TTSRequest(BaseModel):
     text: str
-    voice: str = "alloy"
+    voice: str = "default"
     speed: float = 1.0
     pitch: float = 0.0
 
@@ -25,15 +25,6 @@ class TTSResponse(BaseModel):
     pitch: float
 
 
-@router.get("/voices")
-async def list_voices():
-    cfg = config.load()
-    if not cfg["api_url"] or not cfg["api_key"]:
-        raise HTTPException(400, "请先配置 API URL 和 Key")
-    async with aiohttp.ClientSession() as session:
-        return await tts_client.fetch_voices(session, cfg["api_url"], cfg["api_key"])
-
-
 @router.post("/tts")
 async def generate(body: TTSRequest):
     cfg = config.load()
@@ -41,6 +32,8 @@ async def generate(body: TTSRequest):
         raise HTTPException(400, "请先配置 API URL 和 Key")
     if not body.text.strip():
         raise HTTPException(400, "请输入文本")
+    if not body.voice.strip():
+        raise HTTPException(400, "请输入模型/音色名称")
 
     async with aiohttp.ClientSession() as session:
         filename = await tts_client.generate_tts(

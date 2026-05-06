@@ -7,8 +7,6 @@ const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
 // ---- State ----
 let state = {
-  voices: [],
-  currentFile: null,
   generating: false,
   historyPage: 1,
   historyTotal: 0,
@@ -35,8 +33,6 @@ const dom = {
 
   // Controls
   voiceInput: $('#voiceInput'),
-  voiceList: $('#voiceList'),
-  refreshVoices: $('#refreshVoices'),
   speedSlider: $('#speedSlider'),
   speedVal: $('#speedVal'),
   pitchSlider: $('#pitchSlider'),
@@ -127,7 +123,6 @@ function setupSettings() {
         dom.configMsg.className = 'config-msg';
         dom.configMsg.textContent = '保存成功';
         dom.settingsCard.open = false;
-        fetchVoices();
         showToast('设置已保存', 'success');
       } else {
         const e = await res.json();
@@ -146,29 +141,6 @@ function setupSettings() {
     dom.togglePw.style.color = isPw ? 'var(--accent)' : 'var(--text-muted)';
   });
 }
-
-// ============ Voice List ============
-async function fetchVoices() {
-  try {
-    const res = await fetch('/api/voices');
-    if (!res.ok) {
-      dom.voiceInput.placeholder = '请先配置 API';
-      return;
-    }
-    state.voices = await res.json();
-    dom.voiceList.innerHTML = state.voices
-      .map(v => `<option value="${v.id}">${v.name}</option>`)
-      .join('');
-    dom.voiceInput.placeholder = '选择或输入音色...';
-    if (!dom.voiceInput.value && state.voices.length > 0) {
-      dom.voiceInput.value = state.voices[0].id;
-    }
-  } catch (e) {
-    dom.voiceInput.placeholder = '加载失败，请手动输入';
-  }
-}
-
-dom.refreshVoices.addEventListener('click', fetchVoices);
 
 // ============ Input ============
 function setupInput() {
@@ -226,9 +198,9 @@ async function generate() {
     return;
   }
 
-  const voice = dom.voiceInput.value;
+  const voice = dom.voiceInput.value.trim();
   if (!voice) {
-    showToast('请先配置 API 并刷新音色列表', 'error');
+    showToast('请输入模型/音色名称', 'error');
     return;
   }
 
