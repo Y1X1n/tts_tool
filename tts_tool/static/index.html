@@ -87,9 +87,8 @@
         <div class="control-group">
           <label class="control-label">音色</label>
           <div class="select-wrap">
-            <select id="voiceSelect">
-              <option value="">请先配置 API</option>
-            </select>
+            <input type="text" id="voiceInput" list="voiceList" placeholder="选择或输入音色..." autocomplete="off">
+            <datalist id="voiceList"></datalist>
             <button class="btn btn-ghost btn-sm" id="refreshVoices" title="刷新音色列表">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23,4 23,10 17,10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
             </button>

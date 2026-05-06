@@ -373,6 +373,22 @@ html, body {
 
 .select-wrap select:focus { border-color: var(--accent-dim); }
 
+.select-wrap input {
+  flex: 1;
+  padding: 10px 12px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  outline: none;
+  transition: border var(--transition);
+}
+
+.select-wrap input:focus { border-color: var(--accent-dim); }
+.select-wrap input::placeholder { color: var(--text-muted); }
+
 /* ---- Slider ---- */
 .slider-wrap {
   display: flex;

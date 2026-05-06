@@ -96,18 +96,30 @@ async def _request_tts(
         return await resp.read()
 
 
+BUILTIN_VOICES = [
+    {"id": "alloy", "name": "Alloy"},
+    {"id": "echo", "name": "Echo"},
+    {"id": "fable", "name": "Fable"},
+    {"id": "nova", "name": "Nova"},
+    {"id": "onyx", "name": "Onyx"},
+    {"id": "shimmer", "name": "Shimmer"},
+]
+
+
 async def fetch_voices(
     session: aiohttp.ClientSession,
     api_url: str,
     api_key: str,
 ) -> list[dict]:
-    """Fetch available voices from the TTS API."""
+    """Fetch available voices from API. Falls back to builtin list if unsupported."""
     headers = {"Authorization": f"Bearer {api_key}"}
-    async with session.get(f"{api_url.rstrip('/')}/audio/voices", headers=headers) as resp:
-        if resp.status != 200:
-            body = await resp.text()
-            raise RuntimeError(f"Voices API error {resp.status}: {body[:500]}")
-        data = await resp.json()
-        # OpenAI returns {"voices": [...]}, but support flat list too
-        voices = data.get("voices", data) if isinstance(data, dict) else data
-        return [{"id": v.get("id", v.get("name", "")), "name": v.get("name", v.get("id", ""))} for v in voices]
+    try:
+        async with session.get(f"{api_url.rstrip('/')}/audio/voices", headers=headers) as resp:
+            if resp.status != 200:
+                return BUILTIN_VOICES
+            data = await resp.json()
+            voices = data.get("voices", data) if isinstance(data, dict) else data
+            result = [{"id": v.get("id", v.get("name", "")), "name": v.get("name", v.get("id", ""))} for v in voices]
+            return result or BUILTIN_VOICES
+    except Exception:
+        return BUILTIN_VOICES

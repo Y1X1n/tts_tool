@@ -34,7 +34,8 @@ const dom = {
   fileUpload: $('#fileUpload'),
 
   // Controls
-  voiceSelect: $('#voiceSelect'),
+  voiceInput: $('#voiceInput'),
+  voiceList: $('#voiceList'),
   refreshVoices: $('#refreshVoices'),
   speedSlider: $('#speedSlider'),
   speedVal: $('#speedVal'),
@@ -151,15 +152,19 @@ async function fetchVoices() {
   try {
     const res = await fetch('/api/voices');
     if (!res.ok) {
-      dom.voiceSelect.innerHTML = '<option value="">请先配置 API</option>';
+      dom.voiceInput.placeholder = '请先配置 API';
       return;
     }
     state.voices = await res.json();
-    dom.voiceSelect.innerHTML = state.voices
+    dom.voiceList.innerHTML = state.voices
       .map(v => `<option value="${v.id}">${v.name}</option>`)
       .join('');
+    dom.voiceInput.placeholder = '选择或输入音色...';
+    if (!dom.voiceInput.value && state.voices.length > 0) {
+      dom.voiceInput.value = state.voices[0].id;
+    }
   } catch (e) {
-    dom.voiceSelect.innerHTML = '<option value="">加载失败</option>';
+    dom.voiceInput.placeholder = '加载失败，请手动输入';
   }
 }
 
@@ -221,7 +226,7 @@ async function generate() {
     return;
   }
 
-  const voice = dom.voiceSelect.value;
+  const voice = dom.voiceInput.value;
   if (!voice) {
     showToast('请先配置 API 并刷新音色列表', 'error');
     return;
