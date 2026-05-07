@@ -61,15 +61,18 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 
 音频通过 base64 WAV 编码返回：`choices[0].message.audio.data`
 
+> 音色克隆和音色设计使用用户配置的 `api_url` 直接请求，不拼接额外路径。
+
 ### 音色克隆
 
 ```json
 {
   "model": "voice-clone-model",
   "messages": [
-    {"role": "user", "content": [{"type": "text", "text": "请克隆以下音色"}, {"type": "input_audio", "input_audio": "<base64>", "format": "wav"}]},
+    {"role": "user", "content": "请克隆以下音色"},
     {"role": "assistant", "content": "参考文本"}
   ],
+  "audio": {"voice": "<base64>"},
   "stream": false
 }
 ```

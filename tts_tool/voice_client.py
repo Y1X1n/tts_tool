@@ -23,12 +23,12 @@ async def clone_voice(
             {"role": "user", "content": "请克隆以下音色" + (f"：{ref_text}" if ref_text else "")},
             {"role": "assistant", "content": ref_text or "参考音频"},
         ],
-        "audio": audio_base64,
+        "audio": {"voice": audio_base64},
         "stream": False,
     }
 
     async with session.post(
-        f"{api_url.rstrip('/')}/chat/completions", json=payload, headers=headers
+        api_url.rstrip("/"), json=payload, headers=headers
     ) as resp:
         if resp.status != 200:
             body = await resp.text()
@@ -60,7 +60,7 @@ async def design_voice(
     }
 
     async with session.post(
-        f"{api_url.rstrip('/')}/chat/completions", json=payload, headers=headers
+        api_url.rstrip("/"), json=payload, headers=headers
     ) as resp:
         if resp.status != 200:
             body = await resp.text()
