@@ -17,17 +17,20 @@ async def clone_voice(
 ) -> dict:
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
-    user_content = [{"type": "text", "text": "请克隆以下音色" + (f"：{ref_text}" if ref_text else "")}]
-    user_content.append({
-        "type": "input_audio",
-        "input_audio": audio_base64,
-        "format": audio_format,
-    })
+    user_content = [
+        {"type": "text", "text": "请克隆以下音色" + (f"：{ref_text}" if ref_text else "")},
+        {
+            "type": "input_audio",
+            "input_audio": audio_base64,
+            "format": audio_format,
+        },
+    ]
 
     payload = {
         "model": model,
         "messages": [
             {"role": "user", "content": user_content},
+            {"role": "assistant", "content": ref_text or "已收到参考音频，正在克隆音色"},
         ],
         "stream": False,
     }
@@ -58,7 +61,8 @@ async def design_voice(
     payload = {
         "model": model,
         "messages": [
-            {"role": "user", "content": prompt},
+            {"role": "user", "content": "请根据以下描述生成一个音色"},
+            {"role": "assistant", "content": prompt},
         ],
         "stream": False,
     }
