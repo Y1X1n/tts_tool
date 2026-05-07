@@ -92,7 +92,7 @@ async def _request_tts(
         "stream": False,
     }
     if is_voice_id:
-        payload["voice"] = voice
+        payload["audio"] = {"format": "wav", "voice": voice}
     if speed != 1.0:
         payload["speed"] = speed
     if pitch != 0.0:
