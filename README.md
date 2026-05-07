@@ -61,36 +61,40 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 
 音频通过 base64 WAV 编码返回：`choices[0].message.audio.data`
 
-### 音色克隆
+### 音色克隆 (mimo-v2.5-tts-voiceclone)
 
 ```json
 {
-  "model": "mimo-v2.5-tts",
+  "model": "mimo-v2.5-tts-voiceclone",
   "messages": [
-    {"role": "user", "content": "请克隆以下音色"},
-    {"role": "assistant", "content": "你好世界"}
+    {"role": "user", "content": ""},
+    {"role": "assistant", "content": "Yes, I had a sandwich."}
   ],
-  "audio": {"data": "<base64>"},
+  "audio": {
+    "format": "wav",
+    "voice": "data:audio/mpeg;base64,<base64>"
+  },
   "stream": false
 }
 ```
 
-返回的 `choices[0].message.audio.id` 即为 voice_id，可在合成页通过 `voice` 参数复用。
+assistant 内容为参考音频对应的文本，`audio.voice` 为参考音频的 DataURL。voice_id 通过 `choices[0].message.audio.id` 获取。
 
-### 音色设计
+### 音色设计 (mimo-v2.5-tts-voicedesign)
 
 ```json
 {
-  "model": "mimo-v2.5-tts",
+  "model": "mimo-v2.5-tts-voicedesign",
   "messages": [
-    {"role": "user", "content": "请根据以下描述生成一个音色"},
-    {"role": "assistant", "content": "温柔的女声，音调偏高，语速适中"}
+    {"role": "user", "content": "Give me a young male tone."},
+    {"role": "assistant", "content": "Yes, I had a sandwich."}
   ],
+  "audio": {"format": "wav"},
   "stream": false
 }
 ```
 
-返回的 `choices[0].message.audio.id` 即为 voice_id，可在合成页通过 `voice` 参数复用。
+user 内容为音色描述提示词，assistant 为任意示例文本。voice_id 通过 `choices[0].message.audio.id` 获取。
 
 ## 后端接口
 
