@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import Response
 import uvicorn
 import os
 import database
@@ -11,6 +12,11 @@ app = FastAPI(title="TTS Tool")
 def startup():
     database.init()
     os.makedirs("data/audio", exist_ok=True)
+
+# Silence favicon 404 noise
+@app.get("/favicon.ico")
+def favicon():
+    return Response(status_code=204)
 
 # Mount routers
 from routers import config, tts, history, voice
