@@ -3,6 +3,7 @@ import uuid
 import base64
 import aiohttp
 from fastapi import APIRouter, HTTPException, UploadFile, Form
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import config
 import database
@@ -11,6 +12,7 @@ import voice_client
 router = APIRouter(prefix="/api/voice", tags=["voice"])
 
 CLONE_AUDIO_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "clone_audio")
+AUDIO_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "audio")
 
 
 def _check_config():
@@ -43,11 +45,9 @@ async def clone(
     if not audio.filename:
         raise HTTPException(400, "请上传音频文件")
 
-    # Read and encode audio
     audio_bytes = await audio.read()
     audio_base64 = base64.b64encode(audio_bytes).decode("utf-8")
 
-    # Determine audio format from extension
     ext = (audio.filename or "audio.wav").rsplit(".", 1)[-1].lower()
     audio_format = ext if ext in ("wav", "mp3", "m4a", "ogg", "flac", "aac") else "wav"
 
@@ -60,17 +60,17 @@ async def clone(
 
     try:
         async with aiohttp.ClientSession() as session:
-            result = await voice_client.clone_voice(
+            filename = await voice_client.clone_voice(
                 session, cfg["api_url"], cfg["api_key"],
-                audio_base64, audio_format, voice_name or "", ref_text, model,
+                audio_base64, audio_format, ref_text, model,
             )
     except Exception as e:
         raise HTTPException(502, f"音色克隆 API 调用失败: {e}")
 
     conn = database.get_conn()
     cur = conn.execute(
-        "INSERT INTO clone_voices (voice_id, voice_name, model, ref_audio_path, ref_text) VALUES (?, ?, ?, ?, ?)",
-        [result["voice_id"], result["voice_name"], model, ref_path, ref_text],
+        "INSERT INTO clone_voices (voice_id, voice_name, model, ref_audio_path, ref_text, filename) VALUES (?, ?, ?, ?, ?, ?)",
+        [filename, voice_name or "", model, ref_path, ref_text, filename],
     )
     row_id = cur.lastrowid
     conn.commit()
@@ -78,9 +78,11 @@ async def clone(
 
     return {
         "id": row_id,
-        "voice_id": result["voice_id"],
-        "voice_name": result["voice_name"],
+        "filename": filename,
+        "voice_name": voice_name or "",
         "model": model,
+        "ref_text": ref_text,
+        "ref_audio_path": ref_path,
     }
 
 
@@ -94,17 +96,17 @@ async def design(body: DesignRequest):
 
     try:
         async with aiohttp.ClientSession() as session:
-            result = await voice_client.design_voice(
+            filename = await voice_client.design_voice(
                 session, cfg["api_url"], cfg["api_key"],
-                body.prompt, body.model, body.voice_name,
+                body.prompt, body.model,
             )
     except Exception as e:
         raise HTTPException(502, f"音色设计 API 调用失败: {e}")
 
     conn = database.get_conn()
     cur = conn.execute(
-        "INSERT INTO design_voices (voice_id, voice_name, model, prompt) VALUES (?, ?, ?, ?)",
-        [result["voice_id"], result["voice_name"], body.model, body.prompt],
+        "INSERT INTO design_voices (voice_id, voice_name, model, prompt, filename) VALUES (?, ?, ?, ?, ?)",
+        [filename, body.voice_name or "", body.model, body.prompt, filename],
     )
     row_id = cur.lastrowid
     conn.commit()
@@ -112,10 +114,19 @@ async def design(body: DesignRequest):
 
     return {
         "id": row_id,
-        "voice_id": result["voice_id"],
-        "voice_name": result["voice_name"],
+        "filename": filename,
+        "voice_name": body.voice_name or "",
         "model": body.model,
+        "prompt": body.prompt,
     }
+
+
+@router.get("/audio/{filename}")
+def get_audio(filename: str):
+    filepath = os.path.join(AUDIO_DIR, filename)
+    if not os.path.exists(filepath):
+        raise HTTPException(404, "音频文件不存在")
+    return FileResponse(filepath, media_type="audio/wav")
 
 
 @router.get("/clone-list")
@@ -157,13 +168,13 @@ def design_list(page: int = 1, size: int = 20):
 
 @router.get("/all")
 def all_voices():
-    """Return all saved voice_ids for the TTS voice datalist."""
+    """Return saved voice configurations for TTS voice datalist."""
     conn = database.get_conn()
     clones = conn.execute(
-        "SELECT voice_id, voice_name, 'clone' AS source FROM clone_voices ORDER BY created_at DESC"
+        "SELECT voice_name, model, ref_text, ref_audio_path FROM clone_voices ORDER BY created_at DESC"
     ).fetchall()
     designs = conn.execute(
-        "SELECT voice_id, voice_name, 'design' AS source FROM design_voices ORDER BY created_at DESC"
+        "SELECT voice_name, model, prompt FROM design_voices ORDER BY created_at DESC"
     ).fetchall()
     conn.close()
     return {
@@ -193,9 +204,11 @@ def delete_clone(item_id: int):
     if not row:
         conn.close()
         raise HTTPException(404, "记录不存在")
-    # Delete reference audio file
-    if row["ref_audio_path"] and os.path.exists(row["ref_audio_path"]):
-        os.remove(row["ref_audio_path"])
+    # Delete reference audio and generated audio
+    for path_col in ("ref_audio_path", "filename"):
+        p = row[path_col]
+        if p and os.path.exists(p):
+            os.remove(p)
     conn.execute("DELETE FROM clone_voices WHERE id = ?", [item_id])
     conn.commit()
     conn.close()
@@ -209,6 +222,9 @@ def delete_design(item_id: int):
     if not row:
         conn.close()
         raise HTTPException(404, "记录不存在")
+    # Delete generated audio
+    if row["filename"] and os.path.exists(os.path.join(AUDIO_DIR, row["filename"])):
+        os.remove(os.path.join(AUDIO_DIR, row["filename"]))
     conn.execute("DELETE FROM design_voices WHERE id = ?", [item_id])
     conn.commit()
     conn.close()

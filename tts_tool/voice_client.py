@@ -1,4 +1,6 @@
 import os
+import uuid
+import base64
 import json
 import aiohttp
 
@@ -11,10 +13,10 @@ async def clone_voice(
     api_key: str,
     audio_base64: str,
     audio_format: str,
-    voice_name: str = "",
     ref_text: str = "",
     model: str = "",
-) -> dict:
+) -> str:
+    """Generate speech in cloned voice. Returns output filename."""
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     payload = {
@@ -39,8 +41,14 @@ async def clone_voice(
         raw_body = await resp.text()
 
     data = _parse_response(raw_body)
-    voice_id = _extract_voice_id(data)
-    return {"voice_id": voice_id, "voice_name": voice_name or voice_id}
+    audio_bytes = _extract_audio(data)
+
+    filename = f"{uuid.uuid4().hex}.wav"
+    filepath = os.path.join(AUDIO_DIR, filename)
+    os.makedirs(AUDIO_DIR, exist_ok=True)
+    with open(filepath, "wb") as f:
+        f.write(audio_bytes)
+    return filename
 
 
 async def design_voice(
@@ -49,8 +57,8 @@ async def design_voice(
     api_key: str,
     prompt: str,
     model: str = "",
-    voice_name: str = "",
-) -> dict:
+) -> str:
+    """Generate speech in designed voice. Returns output filename."""
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     payload = {
@@ -72,14 +80,17 @@ async def design_voice(
         raw_body = await resp.text()
 
     data = _parse_response(raw_body)
-    voice_id = _extract_voice_id(data)
-    return {"voice_id": voice_id, "voice_name": voice_name or voice_id}
+    audio_bytes = _extract_audio(data)
+
+    filename = f"{uuid.uuid4().hex}.wav"
+    filepath = os.path.join(AUDIO_DIR, filename)
+    os.makedirs(AUDIO_DIR, exist_ok=True)
+    with open(filepath, "wb") as f:
+        f.write(audio_bytes)
+    return filename
 
 
 def _parse_response(raw_body: str) -> dict:
-    """Parse streaming or non-streaming chat completions response.
-    Takes the last JSON object that contains meaningful data.
-    """
     data = None
     for line in raw_body.strip().splitlines():
         line = line.strip()
@@ -89,7 +100,7 @@ def _parse_response(raw_body: str) -> dict:
             line = line[6:]
         try:
             obj = json.loads(line)
-            if "choices" in obj or "voice_id" in obj:
+            if "choices" in obj:
                 data = obj
         except Exception:
             continue
@@ -103,34 +114,9 @@ def _parse_response(raw_body: str) -> dict:
     return data
 
 
-def _extract_voice_id(data: dict) -> str:
-    """Extract voice_id from API response. Tries multiple possible locations."""
-    # Try choices[0].message.audio.id (standard voice clone response)
+def _extract_audio(data: dict) -> bytes:
     try:
-        return data["choices"][0]["message"]["audio"]["id"]
-    except (KeyError, IndexError, TypeError):
-        pass
-
-    # Try top-level voice_id
-    if "voice_id" in data:
-        return data["voice_id"]
-
-    # Try choices[0].message.content (plain text voice_id)
-    try:
-        content = data["choices"][0]["message"]["content"]
-        if isinstance(content, str) and content.strip():
-            return content.strip()
-    except (KeyError, IndexError, TypeError):
-        pass
-
-    # Try choices[0].message.voice_id
-    try:
-        return data["choices"][0]["message"]["voice_id"]
-    except (KeyError, IndexError, TypeError):
-        pass
-
-    # Try top-level id
-    if "id" in data:
-        return data["id"]
-
-    raise RuntimeError("Could not extract voice_id from API response")
+        b64 = data["choices"][0]["message"]["audio"]["data"]
+        return base64.b64decode(b64)
+    except (KeyError, IndexError, TypeError) as e:
+        raise RuntimeError(f"Unexpected API response format: {e}")

@@ -71,6 +71,10 @@ const dom = {
   cloneStatusBar: $('#cloneStatusBar'),
   cloneStatusText: $('#cloneStatusText'),
   cloneStatusSpinner: $('#cloneStatusSpinner'),
+  clonePlayerCard: $('#clonePlayerCard'),
+  cloneAudioPlayer: $('#cloneAudioPlayer'),
+  cloneDownloadLink: $('#cloneDownloadLink'),
+  cloneCharCount: $('#cloneCharCount'),
   cloneFilter: $('#cloneFilter'),
   cloneVoiceList: $('#cloneVoiceList'),
   clonePagination: $('#clonePagination'),
@@ -85,6 +89,9 @@ const dom = {
   designStatusBar: $('#designStatusBar'),
   designStatusText: $('#designStatusText'),
   designStatusSpinner: $('#designStatusSpinner'),
+  designPlayerCard: $('#designPlayerCard'),
+  designAudioPlayer: $('#designAudioPlayer'),
+  designDownloadLink: $('#designDownloadLink'),
   designVoiceList: $('#designVoiceList'),
   designPagination: $('#designPagination'),
   designEmpty: $('#designEmpty'),
@@ -136,7 +143,6 @@ async function loadConfig() {
     }
     updateSettingsStatus(!!cfg.api_url && !!cfg.api_key);
   } catch (e) { /* ignore */ }
-  updateVoiceDatalist();
 }
 
 function updateSettingsStatus(configured) {
@@ -461,6 +467,10 @@ function renderPagination(data) {
 
 // ============ Voice Clone ============
 function setupVoiceClone() {
+  dom.cloneRefText.addEventListener('input', () => {
+    dom.cloneCharCount.textContent = `${dom.cloneRefText.value.length} 字`;
+  });
+
   // Upload zone: click to select file
   dom.cloneUploadZone.addEventListener('click', () => dom.cloneAudio.click());
 
@@ -541,9 +551,14 @@ async function cloneVoice() {
     }
     const data = await res.json();
     dom.cloneStatusText.textContent = '克隆完成';
-    showToast(`音色克隆完成: ${data.voice_id}`, 'success');
+    const src = `/api/voice/audio/${data.filename}`;
+    dom.cloneAudioPlayer.src = src;
+    dom.cloneDownloadLink.href = src;
+    dom.cloneDownloadLink.download = data.filename;
+    dom.clonePlayerCard.hidden = false;
+    dom.cloneAudioPlayer.play();
+    showToast('音色克隆完成', 'success');
     fetchCloneList();
-    updateVoiceDatalist();
     // Reset file input
     dom.cloneAudio.value = '';
     dom.cloneFileLabel.textContent = '点击或拖拽上传参考音频';
@@ -586,16 +601,15 @@ async function fetchCloneList(page = 1) {
     dom.cloneVoiceList.innerHTML = data.items.map((item, i) => `
       <div class="voice-item">
         <span class="vi-index">#${(page - 1) * 20 + i + 1}</span>
-        <span class="vi-name" title="${escapeHtml(item.voice_name || item.voice_id)}">${escapeHtml(item.voice_name || item.voice_id)}</span>
-        <span class="vi-id" title="${escapeHtml(item.voice_id)}">${escapeHtml(item.voice_id)}</span>
+        <span class="vi-name" title="${escapeHtml(item.voice_name || item.filename || '')}">${escapeHtml(item.voice_name || item.filename || '')}</span>
         <span class="vi-model">${escapeHtml(item.model || '')}</span>
         <span class="vi-time">${formatTime(item.created_at)}</span>
         <div class="vi-actions">
+          ${item.filename ? `<button class="btn btn-ghost btn-sm play-history-btn" data-filename="${escapeHtml(item.filename)}" title="播放">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg>
+          </button>` : ''}
           <button class="favorite-btn ${item.favorited ? 'favorited' : ''}" data-id="${item.id}" data-fav="${item.favorited}" title="收藏">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="${item.favorited ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
-          </button>
-          <button class="btn btn-ghost btn-sm use-voice-btn" data-voice-id="${escapeHtml(item.voice_id)}" title="用于合成">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg>
           </button>
           <button class="btn btn-danger delete-voice-btn" data-id="${item.id}" data-type="clone" title="删除">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
@@ -605,20 +619,16 @@ async function fetchCloneList(page = 1) {
     `).join('');
 
     // Event bindings
+    $$('.play-history-btn', dom.cloneVoiceList).forEach(btn => {
+      btn.addEventListener('click', () => {
+        const src = `/api/voice/audio/${btn.dataset.filename}`;
+        dom.cloneAudioPlayer.src = src;
+        dom.clonePlayerCard.hidden = false;
+        dom.cloneAudioPlayer.play();
+      });
+    });
     $$('.favorite-btn', dom.cloneVoiceList).forEach(btn => {
       btn.addEventListener('click', () => toggleFavorite(btn.dataset.id, btn.dataset.fav !== '1'));
-    });
-    $$('.use-voice-btn', dom.cloneVoiceList).forEach(btn => {
-      btn.addEventListener('click', () => {
-        dom.voiceInput.value = btn.dataset.voiceId;
-        dom.tabs.forEach(t => t.classList.remove('active'));
-        const genTab = document.querySelector('.tab[data-tab="generate"]');
-        if (genTab) genTab.classList.add('active');
-        dom.panels.forEach(p => p.classList.remove('active'));
-        const genPanel = $('#panel-generate');
-        if (genPanel) genPanel.classList.add('active');
-        showToast('已填入音色: ' + btn.dataset.voiceId, 'success');
-      });
     });
     $$('.delete-voice-btn', dom.cloneVoiceList).forEach(btn => {
       btn.addEventListener('click', () => deleteVoiceItem(btn.dataset.id, btn.dataset.type));
@@ -695,11 +705,14 @@ async function designVoice() {
 
     const data = await res.json();
     dom.designStatusText.textContent = '生成完成';
-    showToast(`音色生成完成: ${data.voice_id}`, 'success');
+    const src = `/api/voice/audio/${data.filename}`;
+    dom.designAudioPlayer.src = src;
+    dom.designDownloadLink.href = src;
+    dom.designDownloadLink.download = data.filename;
+    dom.designPlayerCard.hidden = false;
+    dom.designAudioPlayer.play();
+    showToast('音色生成完成', 'success');
     fetchDesignList();
-    updateVoiceDatalist();
-    dom.designPrompt.value = '';
-    dom.designCharCount.textContent = '0 字';
   } catch (e) {
     showToast(e.message || '生成失败', 'error');
     dom.designStatusText.textContent = e.message || '生成失败';
@@ -734,14 +747,13 @@ async function fetchDesignList(page = 1) {
     dom.designVoiceList.innerHTML = data.items.map((item, i) => `
       <div class="voice-item">
         <span class="vi-index">#${(page - 1) * 20 + i + 1}</span>
-        <span class="vi-name" title="${escapeHtml(item.voice_name || item.voice_id)}">${escapeHtml(item.voice_name || item.voice_id)}</span>
-        <span class="vi-id" title="${escapeHtml(item.voice_id)}">${escapeHtml(item.voice_id)}</span>
+        <span class="vi-name" title="${escapeHtml(item.voice_name || item.filename || '')}">${escapeHtml(item.voice_name || item.filename || '')}</span>
         <span class="vi-model">${escapeHtml(item.model || '')}</span>
         <span class="vi-time">${formatTime(item.created_at)}</span>
         <div class="vi-actions">
-          <button class="btn btn-ghost btn-sm use-voice-btn" data-voice-id="${escapeHtml(item.voice_id)}" title="用于合成">
+          ${item.filename ? `<button class="btn btn-ghost btn-sm play-history-btn" data-filename="${escapeHtml(item.filename)}" title="播放">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg>
-          </button>
+          </button>` : ''}
           <button class="btn btn-danger delete-voice-btn" data-id="${item.id}" data-type="design" title="删除">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           </button>
@@ -750,16 +762,12 @@ async function fetchDesignList(page = 1) {
     `).join('');
 
     // Event bindings
-    $$('.use-voice-btn', dom.designVoiceList).forEach(btn => {
+    $$('.play-history-btn', dom.designVoiceList).forEach(btn => {
       btn.addEventListener('click', () => {
-        dom.voiceInput.value = btn.dataset.voiceId;
-        dom.tabs.forEach(t => t.classList.remove('active'));
-        const genTab = document.querySelector('.tab[data-tab="generate"]');
-        if (genTab) genTab.classList.add('active');
-        dom.panels.forEach(p => p.classList.remove('active'));
-        const genPanel = $('#panel-generate');
-        if (genPanel) genPanel.classList.add('active');
-        showToast('已填入音色: ' + btn.dataset.voiceId, 'success');
+        const src = `/api/voice/audio/${btn.dataset.filename}`;
+        dom.designAudioPlayer.src = src;
+        dom.designPlayerCard.hidden = false;
+        dom.designAudioPlayer.play();
       });
     });
     $$('.delete-voice-btn', dom.designVoiceList).forEach(btn => {
@@ -782,7 +790,6 @@ async function deleteVoiceItem(id, type) {
       showToast('已删除', 'success');
       if (type === 'clone') fetchCloneList(state.clonePage);
       else fetchDesignList(state.designPage);
-      updateVoiceDatalist();
     } else {
       showToast('删除失败', 'error');
     }
@@ -823,16 +830,6 @@ function renderVoicePagination(data, type) {
   $$('.btn[data-page]', pagEl).forEach(btn => {
     btn.addEventListener('click', () => fetchFn(parseInt(btn.dataset.page)));
   });
-}
-
-async function updateVoiceDatalist() {
-  try {
-    const res = await fetch('/api/voice/all');
-    const data = await res.json();
-    dom.voiceDatalist.innerHTML = data.items.map(item =>
-      `<option value="${escapeHtml(item.voice_id)}">${escapeHtml(item.voice_name || item.voice_id)}</option>`
-    ).join('');
-  } catch (e) { /* ignore */ }
 }
 
 // ============ Toast ============

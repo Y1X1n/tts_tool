@@ -99,8 +99,7 @@
         <div class="control-group">
           <label class="control-label">音色</label>
           <div class="select-wrap">
-            <input type="text" id="voiceInput" placeholder="输入模型/音色名称" autocomplete="off" list="voiceDatalist">
-            <datalist id="voiceDatalist"></datalist>
+            <input type="text" id="voiceInput" placeholder="输入模型/音色名称" autocomplete="off">
           </div>
         </div>
 
@@ -186,9 +185,9 @@
         </div>
         <div class="text-area-wrap" style="margin-top:16px;">
           <div class="text-area-toolbar">
-            <span>参考文本（可选）</span>
+            <span class="char-count" id="cloneCharCount">0 字</span>
           </div>
-          <textarea id="cloneRefText" placeholder="音频中说话的内容..." rows="3"></textarea>
+          <textarea id="cloneRefText" placeholder="输入要让克隆音色说的话..." rows="4"></textarea>
         </div>
       </section>
       <section class="control-section">
@@ -201,6 +200,13 @@
         <div class="status-bar" id="cloneStatusBar" hidden>
           <span class="status-text" id="cloneStatusText"></span>
           <div class="status-spinner" id="cloneStatusSpinner" hidden></div>
+        </div>
+        <div class="player-card" id="clonePlayerCard" hidden>
+          <audio id="cloneAudioPlayer" controls></audio>
+          <a class="btn btn-ghost btn-sm download-link" id="cloneDownloadLink" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            下载
+          </a>
         </div>
         <div class="clone-filter" id="cloneFilter" hidden>
           <button class="btn btn-ghost btn-sm filter-btn active" data-filter="all">全部</button>
@@ -239,7 +245,7 @@
           <div class="text-area-toolbar">
             <span class="char-count" id="designCharCount">0 字</span>
           </div>
-          <textarea id="designPrompt" placeholder="描述你想要的音色特征，例如：温柔的女声，音调偏高，语速适中..." rows="6"></textarea>
+          <textarea id="designPrompt" placeholder="描述你想要的音色特征，例如：温柔的女声，音调偏高，语速适中..." rows="4"></textarea>
         </div>
       </section>
       <section class="control-section">
@@ -252,6 +258,13 @@
         <div class="status-bar" id="designStatusBar" hidden>
           <span class="status-text" id="designStatusText"></span>
           <div class="status-spinner" id="designStatusSpinner" hidden></div>
+        </div>
+        <div class="player-card" id="designPlayerCard" hidden>
+          <audio id="designAudioPlayer" controls></audio>
+          <a class="btn btn-ghost btn-sm download-link" id="designDownloadLink" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            下载
+          </a>
         </div>
       </section>
     </div>

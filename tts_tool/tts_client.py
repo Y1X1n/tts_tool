@@ -80,19 +80,14 @@ async def _request_tts(
     pitch: float,
 ) -> bytes:
     """Call TTS API via chat/completions format, decode base64 WAV audio."""
-    # Detect voice_id (32-char hex UUID) vs model name
-    is_voice_id = len(voice) == 32 and all(c in "0123456789abcdef" for c in voice.lower())
-
     payload = {
-        "model": "mimo-v2.5-tts" if is_voice_id else voice,
+        "model": voice,
         "messages": [
             {"role": "user", "content": "请将以下文字转为语音"},
             {"role": "assistant", "content": text},
         ],
         "stream": False,
     }
-    if is_voice_id:
-        payload["audio"] = {"format": "wav", "voice": voice}
     if speed != 1.0:
         payload["speed"] = speed
     if pitch != 0.0:

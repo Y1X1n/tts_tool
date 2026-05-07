@@ -33,10 +33,17 @@ def init():
             model           TEXT,
             ref_audio_path  TEXT,
             ref_text        TEXT,
+            filename        TEXT,
             favorited       INTEGER DEFAULT 0,
             created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    # Migration: add filename column if missing
+    try:
+        conn.execute("ALTER TABLE clone_voices ADD COLUMN filename TEXT")
+    except Exception:
+        pass
+
     conn.execute("""
         CREATE TABLE IF NOT EXISTS design_voices (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,8 +51,14 @@ def init():
             voice_name      TEXT,
             model           TEXT,
             prompt          TEXT,
+            filename        TEXT,
             created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    try:
+        conn.execute("ALTER TABLE design_voices ADD COLUMN filename TEXT")
+    except Exception:
+        pass
+
     conn.commit()
     conn.close()
