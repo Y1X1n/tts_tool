@@ -24,7 +24,7 @@ async def clone_voice(
             {"role": "user", "content": "请克隆以下音色" + (f"：{ref_text}" if ref_text else "")},
             {"role": "assistant", "content": ref_text or "参考音频"},
         ],
-        "audio": {"data": audio_base64},
+        "audio": {"voice": audio_base64},
         "stream": False,
     }
 
