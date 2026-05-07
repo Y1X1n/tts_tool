@@ -93,11 +93,9 @@ async def _request_tts(
     if pitch != 0.0:
         payload["pitch"] = pitch
 
-    url = f"{api_url.rstrip('/')}/chat/completions"
-    print(f"[TTS] URL: {url}")
-    print(f"[TTS] payload keys: {list(payload.keys())}, model: {voice}, text_len: {len(text)}")
-
-    async with session.post(url, json=payload, headers=headers) as resp:
+    async with session.post(
+        f"{api_url.rstrip('/')}/chat/completions", json=payload, headers=headers
+    ) as resp:
         if resp.status != 200:
             body = await resp.text()
             raise RuntimeError(f"TTS API error {resp.status}: {body[:500]}")

@@ -65,23 +65,23 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 
 ```json
 {
-  "model": "voice-clone-model",
+  "model": "mimo-v2.5-tts",
   "messages": [
     {"role": "user", "content": "请克隆以下音色"},
-    {"role": "assistant", "content": "参考文本"}
+    {"role": "assistant", "content": "你好世界"}
   ],
-  "audio": {"voice": "<base64>"},
+  "audio": {"data": "<base64>"},
   "stream": false
 }
 ```
 
-返回 voice_id，可在合成页直接使用。
+返回的 `choices[0].message.audio.id` 即为 voice_id，可在合成页通过 `voice` 参数复用。
 
 ### 音色设计
 
 ```json
 {
-  "model": "voice-design-model",
+  "model": "mimo-v2.5-tts",
   "messages": [
     {"role": "user", "content": "请根据以下描述生成一个音色"},
     {"role": "assistant", "content": "温柔的女声，音调偏高，语速适中"}
@@ -90,7 +90,7 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 }
 ```
 
-返回 voice_id，可在合成页直接使用。
+返回的 `choices[0].message.audio.id` 即为 voice_id，可在合成页通过 `voice` 参数复用。
 
 ## 后端接口
 

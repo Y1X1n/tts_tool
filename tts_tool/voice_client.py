@@ -24,14 +24,9 @@ async def clone_voice(
             {"role": "user", "content": "请克隆以下音色" + (f"：{ref_text}" if ref_text else "")},
             {"role": "assistant", "content": ref_text or "参考音频"},
         ],
-        "audio": {"voice": audio_base64[:50] + "..."},
+        "audio": {"data": audio_base64},
         "stream": False,
     }
-    print(f"[clone_voice] URL: {url}")
-    print(f"[clone_voice] payload keys: {list(payload.keys())}, model: {model}, audio_len: {len(audio_base64)}, format: {audio_format}")
-
-    # Restore full audio before sending
-    payload["audio"]["voice"] = audio_base64
 
     async with session.post(url, json=payload, headers=headers) as resp:
         if resp.status != 200:
@@ -54,7 +49,6 @@ async def design_voice(
 ) -> dict:
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
-    url = f"{api_url.rstrip('/')}/chat/completions"
     payload = {
         "model": model,
         "messages": [
@@ -63,10 +57,10 @@ async def design_voice(
         ],
         "stream": False,
     }
-    print(f"[design_voice] URL: {url}")
-    print(f"[design_voice] payload keys: {list(payload.keys())}, model: {model}")
 
-    async with session.post(url, json=payload, headers=headers) as resp:
+    async with session.post(
+        f"{api_url.rstrip('/')}/chat/completions", json=payload, headers=headers
+    ) as resp:
         if resp.status != 200:
             body = await resp.text()
             raise RuntimeError(f"Voice design API error {resp.status}: {body[:500]}")
@@ -106,6 +100,12 @@ def _parse_response(raw_body: str) -> dict:
 
 def _extract_voice_id(data: dict) -> str:
     """Extract voice_id from API response. Tries multiple possible locations."""
+    # Try choices[0].message.audio.id (standard voice clone response)
+    try:
+        return data["choices"][0]["message"]["audio"]["id"]
+    except (KeyError, IndexError, TypeError):
+        pass
+
     # Try top-level voice_id
     if "voice_id" in data:
         return data["voice_id"]
