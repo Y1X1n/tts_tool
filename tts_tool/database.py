@@ -25,5 +25,27 @@ def init():
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS clone_voices (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            voice_id        TEXT NOT NULL,
+            voice_name      TEXT,
+            model           TEXT,
+            ref_audio_path  TEXT,
+            ref_text        TEXT,
+            favorited       INTEGER DEFAULT 0,
+            created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS design_voices (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            voice_id        TEXT NOT NULL,
+            voice_name      TEXT,
+            model           TEXT,
+            prompt          TEXT,
+            created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
     conn.commit()
     conn.close()

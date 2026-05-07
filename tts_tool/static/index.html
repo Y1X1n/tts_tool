@@ -26,6 +26,18 @@
         </span>
         合成
       </button>
+      <button class="tab" data-tab="clone">
+        <span class="tab-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+        </span>
+        音色克隆
+      </button>
+      <button class="tab" data-tab="design">
+        <span class="tab-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </span>
+        音色设计
+      </button>
       <button class="tab" data-tab="history">
         <span class="tab-icon">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
@@ -87,7 +99,8 @@
         <div class="control-group">
           <label class="control-label">音色</label>
           <div class="select-wrap">
-            <input type="text" id="voiceInput" placeholder="输入模型/音色名称" autocomplete="off">
+            <input type="text" id="voiceInput" placeholder="输入模型/音色名称" autocomplete="off" list="voiceDatalist">
+            <datalist id="voiceDatalist"></datalist>
           </div>
         </div>
 
@@ -146,6 +159,107 @@
           </a>
         </div>
       </section>
+    </div>
+  </main>
+
+  <!-- ========== CLONE TAB ========== -->
+  <main class="panel" id="panel-clone">
+    <div class="generate-layout">
+      <section class="input-section">
+        <div class="text-area-wrap">
+          <div class="text-area-toolbar">
+            <span>模型名称</span>
+          </div>
+          <input type="text" id="cloneModel" class="clone-model-input" placeholder="输入克隆模型名称" autocomplete="off">
+        </div>
+        <div class="text-area-wrap" style="margin-top:16px;">
+          <div class="text-area-toolbar">
+            <span>音色名称（可选）</span>
+          </div>
+          <input type="text" id="cloneName" class="clone-model-input" placeholder="为音色取个名字" autocomplete="off">
+        </div>
+        <div class="upload-zone" id="cloneUploadZone">
+          <input type="file" id="cloneAudio" accept="audio/*" hidden>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          <p id="cloneFileLabel">点击或拖拽上传参考音频</p>
+          <span class="upload-hint">支持 wav, mp3, m4a, ogg, flac</span>
+        </div>
+        <div class="text-area-wrap" style="margin-top:16px;">
+          <div class="text-area-toolbar">
+            <span>参考文本（可选）</span>
+          </div>
+          <textarea id="cloneRefText" placeholder="音频中说话的内容..." rows="3"></textarea>
+        </div>
+      </section>
+      <section class="control-section">
+        <button class="btn btn-primary btn-generate" id="cloneBtn">
+          <span class="btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>
+          </span>
+          开始克隆
+        </button>
+        <div class="status-bar" id="cloneStatusBar" hidden>
+          <span class="status-text" id="cloneStatusText"></span>
+          <div class="status-spinner" id="cloneStatusSpinner" hidden></div>
+        </div>
+        <div class="clone-filter" id="cloneFilter" hidden>
+          <button class="btn btn-ghost btn-sm filter-btn active" data-filter="all">全部</button>
+          <button class="btn btn-ghost btn-sm filter-btn" data-filter="fav">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/></svg>
+            仅收藏
+          </button>
+        </div>
+      </section>
+    </div>
+    <div class="voice-list" id="cloneVoiceList"></div>
+    <div class="pagination" id="clonePagination" hidden></div>
+    <div class="history-empty" id="cloneEmpty" hidden>
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p>暂无克隆音色</p>
+    </div>
+  </main>
+
+  <!-- ========== DESIGN TAB ========== -->
+  <main class="panel" id="panel-design">
+    <div class="generate-layout">
+      <section class="input-section">
+        <div class="text-area-wrap">
+          <div class="text-area-toolbar">
+            <span>模型名称</span>
+          </div>
+          <input type="text" id="designModel" class="clone-model-input" placeholder="输入设计模型名称" autocomplete="off">
+        </div>
+        <div class="text-area-wrap" style="margin-top:16px;">
+          <div class="text-area-toolbar">
+            <span>音色名称（可选）</span>
+          </div>
+          <input type="text" id="designName" class="clone-model-input" placeholder="为音色取个名字" autocomplete="off">
+        </div>
+        <div class="text-area-wrap" style="margin-top:16px;">
+          <div class="text-area-toolbar">
+            <span class="char-count" id="designCharCount">0 字</span>
+          </div>
+          <textarea id="designPrompt" placeholder="描述你想要的音色特征，例如：温柔的女声，音调偏高，语速适中..." rows="6"></textarea>
+        </div>
+      </section>
+      <section class="control-section">
+        <button class="btn btn-primary btn-generate" id="designBtn">
+          <span class="btn-icon">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </span>
+          生成音色
+        </button>
+        <div class="status-bar" id="designStatusBar" hidden>
+          <span class="status-text" id="designStatusText"></span>
+          <div class="status-spinner" id="designStatusSpinner" hidden></div>
+        </div>
+      </section>
+    </div>
+    <div class="voice-list" id="designVoiceList"></div>
+    <div class="pagination" id="designPagination" hidden></div>
+    <div class="history-empty" id="designEmpty" hidden>
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <p>暂无设计音色</p>
     </div>
   </main>
 

@@ -13,10 +13,11 @@ def startup():
     os.makedirs("data/audio", exist_ok=True)
 
 # Mount routers
-from routers import config, tts, history
+from routers import config, tts, history, voice
 app.include_router(config.router)
 app.include_router(tts.router)
 app.include_router(history.router)
+app.include_router(voice.router)
 
 # Serve static frontend
 static_dir = os.path.join(os.path.dirname(__file__), "static")

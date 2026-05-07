@@ -761,6 +761,195 @@ input[type="range"]::-webkit-slider-thumb:hover {
 ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ---- Responsive ---- */
+/* ---- Upload Zone ---- */
+.upload-zone {
+  border: 2px dashed var(--border-light);
+  border-radius: var(--radius-md);
+  padding: 32px 16px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  margin-top: 16px;
+  color: var(--text-muted);
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: var(--accent);
+  background: rgba(34, 211, 238, 0.04);
+  color: var(--text-secondary);
+}
+
+.upload-zone svg {
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+
+.upload-zone p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.upload-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+/* ---- Clone Model Input ---- */
+.clone-model-input {
+  width: 100%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.clone-model-input:focus {
+  border-color: var(--accent);
+}
+
+.clone-model-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* ---- Voice List ---- */
+.voice-list {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.voice-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s;
+}
+
+.voice-item:hover {
+  border-color: var(--border-color);
+}
+
+.voice-item .vi-index {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  min-width: 32px;
+}
+
+.voice-item .vi-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--text-primary);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-item .vi-id {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.voice-item .vi-model {
+  font-size: 11px;
+  color: var(--text-muted);
+  background: var(--bg-surface);
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-family: var(--font-mono);
+}
+
+.voice-item .vi-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---- Favorite Button ---- */
+.favorite-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: var(--text-muted);
+  transition: color 0.2s, transform 0.15s;
+  display: flex;
+  align-items: center;
+}
+
+.favorite-btn:hover {
+  color: #f59e0b;
+  transform: scale(1.15);
+}
+
+.favorite-btn.favorited {
+  color: #f59e0b;
+}
+
+.favorite-btn.favorited svg {
+  fill: #f59e0b;
+}
+
+/* ---- Clone Filter ---- */
+.clone-filter {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.filter-btn.active {
+  background: var(--accent);
+  color: var(--bg-base);
+}
+
+/* ---- Voice Type Badge ---- */
+.voice-type-badge {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.voice-type-badge.clone {
+  background: rgba(34, 211, 238, 0.15);
+  color: var(--accent);
+}
+
+.voice-type-badge.design {
+  background: rgba(168, 85, 247, 0.15);
+  color: #a855f7;
+}
+
+/* ---- Voice actions inline ---- */
+.voice-item .vi-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ---- Responsive ---- */
 @media (max-width: 768px) {
   .generate-layout {
     grid-template-columns: 1fr;
@@ -779,5 +968,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
     max-width: 100%;
     order: 10;
     flex-basis: 100%;
+  }
+
+  .voice-item {
+    flex-wrap: wrap;
+  }
+
+  .voice-item .vi-id {
+    max-width: 100%;
   }
 }
