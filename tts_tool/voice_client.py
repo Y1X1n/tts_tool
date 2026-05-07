@@ -28,7 +28,7 @@ async def clone_voice(
     }
 
     async with session.post(
-        api_url.rstrip("/"), json=payload, headers=headers
+        f"{api_url.rstrip('/')}/chat/completions", json=payload, headers=headers
     ) as resp:
         if resp.status != 200:
             body = await resp.text()
@@ -60,7 +60,7 @@ async def design_voice(
     }
 
     async with session.post(
-        api_url.rstrip("/"), json=payload, headers=headers
+        f"{api_url.rstrip('/')}/chat/completions", json=payload, headers=headers
     ) as resp:
         if resp.status != 200:
             body = await resp.text()
