@@ -171,22 +171,26 @@ def all_voices():
     """Return saved voice names for TTS voice dropdown."""
     conn = database.get_conn()
     clones = conn.execute(
-        "SELECT voice_id, voice_name FROM clone_voices WHERE voice_name != '' ORDER BY created_at DESC"
+        "SELECT voice_id, voice_name FROM clone_voices ORDER BY created_at DESC"
     ).fetchall()
     designs = conn.execute(
-        "SELECT voice_id, voice_name FROM design_voices WHERE voice_name != '' ORDER BY created_at DESC"
+        "SELECT voice_id, voice_name FROM design_voices ORDER BY created_at DESC"
     ).fetchall()
     conn.close()
     items = []
     seen = set()
     for r in clones:
-        if r["voice_id"] and r["voice_id"] not in seen:
-            seen.add(r["voice_id"])
-            items.append({"voice_id": r["voice_id"], "voice_name": r["voice_name"], "source": "clone"})
+        vid = r["voice_id"]
+        if vid and vid not in seen:
+            seen.add(vid)
+            label = r["voice_name"] or vid.rsplit(".", 1)[0][:12]
+            items.append({"voice_id": vid, "voice_name": label, "source": "clone"})
     for r in designs:
-        if r["voice_id"] and r["voice_id"] not in seen:
-            seen.add(r["voice_id"])
-            items.append({"voice_id": r["voice_id"], "voice_name": r["voice_name"], "source": "design"})
+        vid = r["voice_id"]
+        if vid and vid not in seen:
+            seen.add(vid)
+            label = r["voice_name"] or vid.rsplit(".", 1)[0][:12]
+            items.append({"voice_id": vid, "voice_name": label, "source": "design"})
     return {"items": items}
 
 
