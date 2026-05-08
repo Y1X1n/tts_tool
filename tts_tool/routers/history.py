@@ -8,13 +8,12 @@ router = APIRouter(prefix="/api/history", tags=["history"])
 
 @router.get("")
 def list_history(page: int = 1, size: int = 20):
-    conn = database.get_conn()
-    total = conn.execute("SELECT COUNT(*) FROM history").fetchone()[0]
-    rows = conn.execute(
-        "SELECT * FROM history ORDER BY created_at DESC LIMIT ? OFFSET ?",
-        [size, (page - 1) * size],
-    ).fetchall()
-    conn.close()
+    with database.connect() as conn:
+        total = conn.execute("SELECT COUNT(*) FROM history").fetchone()[0]
+        rows = conn.execute(
+            "SELECT * FROM history ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            [size, (page - 1) * size],
+        ).fetchall()
     return {
         "total": total,
         "page": page,
@@ -25,9 +24,8 @@ def list_history(page: int = 1, size: int = 20):
 
 @router.get("/{item_id}")
 def get_history(item_id: int):
-    conn = database.get_conn()
-    row = conn.execute("SELECT * FROM history WHERE id = ?", [item_id]).fetchone()
-    conn.close()
+    with database.connect() as conn:
+        row = conn.execute("SELECT * FROM history WHERE id = ?", [item_id]).fetchone()
     if not row:
         raise HTTPException(404, "记录不存在")
     return dict(row)
@@ -35,14 +33,11 @@ def get_history(item_id: int):
 
 @router.delete("/{item_id}")
 def delete_history(item_id: int):
-    conn = database.get_conn()
-    row = conn.execute("SELECT * FROM history WHERE id = ?", [item_id]).fetchone()
-    if not row:
-        conn.close()
-        raise HTTPException(404, "记录不存在")
-    conn.execute("DELETE FROM history WHERE id = ?", [item_id])
-    conn.commit()
-    conn.close()
+    with database.connect() as conn:
+        row = conn.execute("SELECT * FROM history WHERE id = ?", [item_id]).fetchone()
+        if not row:
+            raise HTTPException(404, "记录不存在")
+        conn.execute("DELETE FROM history WHERE id = ?", [item_id])
     filepath = os.path.join(tts_client.AUDIO_DIR, row["filename"])
     if os.path.exists(filepath):
         os.remove(filepath)

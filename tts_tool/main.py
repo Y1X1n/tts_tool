@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import Response
@@ -6,27 +7,28 @@ import os
 import database
 from paths import static_dir, data_dir
 
-app = FastAPI(title="TTS Tool")
 
-# Init database on startup
-@app.on_event("startup")
-def startup():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     database.init()
     os.makedirs(os.path.join(data_dir(), "audio"), exist_ok=True)
+    yield
 
-# Silence favicon 404 noise
+
+app = FastAPI(title="TTS Tool", lifespan=lifespan)
+
+
 @app.get("/favicon.ico")
 def favicon():
     return Response(status_code=204)
 
-# Mount routers
+
 from routers import config, tts, history, voice
 app.include_router(config.router)
 app.include_router(tts.router)
 app.include_router(history.router)
 app.include_router(voice.router)
 
-# Serve static frontend
 app.mount("/", StaticFiles(directory=static_dir(), html=True), name="static")
 
 if __name__ == "__main__":
