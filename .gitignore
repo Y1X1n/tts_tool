@@ -1,5 +1,6 @@
+tts_tool/build/
+tts_tool/dist/
+tts_tool/data/
 __pycache__/
 *.pyc
-**/data/
-skills-lock.json
-.claude/
+*.spec.bak

@@ -1,7 +1,8 @@
 import os
 import json
+from paths import data_dir
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "data", "config.json")
+CONFIG_FILE = os.path.join(data_dir(), "config.json")
 
 DEFAULTS = {
     "api_url": "",

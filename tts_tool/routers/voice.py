@@ -8,11 +8,12 @@ from pydantic import BaseModel
 import config
 import database
 import voice_client
+from paths import data_dir
 
 router = APIRouter(prefix="/api/voice", tags=["voice"])
 
-CLONE_AUDIO_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "clone_audio")
-AUDIO_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "audio")
+CLONE_AUDIO_DIR = os.path.join(data_dir(), "clone_audio")
+AUDIO_DIR = os.path.join(data_dir(), "audio")
 
 
 def _check_config():

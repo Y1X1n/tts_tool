@@ -1,7 +1,8 @@
 import sqlite3
 import os
+from paths import data_dir
 
-DB_FILE = os.path.join(os.path.dirname(__file__), "data", "tts.db")
+DB_FILE = os.path.join(data_dir(), "tts.db")
 
 
 def get_conn() -> sqlite3.Connection:

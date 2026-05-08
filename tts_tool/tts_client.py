@@ -6,7 +6,8 @@ import json
 import aiohttp
 import asyncio
 
-AUDIO_DIR = os.path.join(os.path.dirname(__file__), "data", "audio")
+from paths import data_dir
+AUDIO_DIR = os.path.join(data_dir(), "audio")
 
 
 def split_text(text: str, max_chars: int = 500) -> list[str]:

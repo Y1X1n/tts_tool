@@ -4,7 +4,8 @@ import base64
 import json
 import aiohttp
 
-AUDIO_DIR = os.path.join(os.path.dirname(__file__), "data", "audio")
+from paths import data_dir
+AUDIO_DIR = os.path.join(data_dir(), "audio")
 
 
 async def clone_voice(

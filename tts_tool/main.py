@@ -4,6 +4,7 @@ from fastapi.responses import Response
 import uvicorn
 import os
 import database
+from paths import static_dir, data_dir
 
 app = FastAPI(title="TTS Tool")
 
@@ -11,7 +12,7 @@ app = FastAPI(title="TTS Tool")
 @app.on_event("startup")
 def startup():
     database.init()
-    os.makedirs("data/audio", exist_ok=True)
+    os.makedirs(os.path.join(data_dir(), "audio"), exist_ok=True)
 
 # Silence favicon 404 noise
 @app.get("/favicon.ico")
@@ -26,8 +27,11 @@ app.include_router(history.router)
 app.include_router(voice.router)
 
 # Serve static frontend
-static_dir = os.path.join(os.path.dirname(__file__), "static")
-app.mount("/", StaticFiles(directory=static_dir, html=True), name="static")
+app.mount("/", StaticFiles(directory=static_dir(), html=True), name="static")
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    import sys
+    if getattr(sys, 'frozen', False):
+        uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
+    else:
+        uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
