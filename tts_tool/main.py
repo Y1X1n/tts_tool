@@ -31,6 +31,13 @@ app.mount("/", StaticFiles(directory=static_dir(), html=True), name="static")
 
 if __name__ == "__main__":
     import sys
+    import webbrowser
+    import threading
+
+    url = "http://127.0.0.1:8000"
+    threading.Timer(1.0, lambda: webbrowser.open(url)).start()
+
+    print(f"TTS Studio 启动中... 浏览器自动打开 {url}")
     if getattr(sys, 'frozen', False):
         uvicorn.run(app, host="127.0.0.1", port=8000, reload=False)
     else:
