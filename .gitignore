@@ -4,3 +4,8 @@ tts_tool/data/
 __pycache__/
 *.pyc
 *.spec.bak
+data/
+__pycache__/
+*.db
+.claude/
+skills-lock.json
