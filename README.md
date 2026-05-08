@@ -6,9 +6,9 @@
 
 | 板块 | 说明 |
 |------|------|
-| **语音合成** | 文本转语音，支持语速/音调调节、长文本自动分段、文件上传 |
-| **音色克隆** | 上传参考音频 → 获取 voice_id，支持收藏和历史管理 |
-| **音色设计** | 输入提示词描述音色特征 → 生成 voice_id |
+| **语音合成** | 文本转语音，模型/音色分离，支持预设音色和克隆/设计音色 |
+| **音色克隆** | 上传参考音频 → 直接生成语音，支持收藏和历史回放 |
+| **音色设计** | 输入提示词描述音色特征 → 直接生成语音 |
 | **历史记录** | TTS 合成历史，支持回放、下载、删除，分页浏览 |
 
 三个功能共享同一套 API 配置，均通过 Chat Completions 协议通信。
@@ -44,7 +44,7 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 
 所有功能通过 `{api_url}/chat/completions` 端点通信，遵循 Chat Completions 格式：
 
-### 语音合成
+### 语音合成 (mimo-v2.5-tts)
 
 ```json
 {
@@ -59,9 +59,17 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 }
 ```
 
-音频通过 base64 WAV 编码返回：`choices[0].message.audio.data`
+使用预设音色时增加 `audio` 字段：
+```json
+{
+  "model": "mimo-v2.5-tts",
+  "audio": {"format": "wav", "voice": "Mia"}
+}
+```
 
 ### 音色克隆 (mimo-v2.5-tts-voiceclone)
+
+一次调用即完成克隆+合成，assistant 为待合成文本，`audio.voice` 为参考音频 DataURL：
 
 ```json
 {
@@ -78,9 +86,9 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 }
 ```
 
-assistant 内容为参考音频对应的文本，`audio.voice` 为参考音频的 DataURL。voice_id 通过 `choices[0].message.audio.id` 获取。
-
 ### 音色设计 (mimo-v2.5-tts-voicedesign)
+
+user 为音色描述，assistant 为待合成文本：
 
 ```json
 {
@@ -94,7 +102,7 @@ assistant 内容为参考音频对应的文本，`audio.voice` 为参考音频�
 }
 ```
 
-user 内容为音色描述提示词，assistant 为任意示例文本。voice_id 通过 `choices[0].message.audio.id` 获取。
+音频通过 base64 WAV 编码返回：`choices[0].message.audio.data`
 
 ## 后端接口
 
@@ -102,20 +110,20 @@ user 内容为音色描述提示词，assistant 为任意示例文本。voice_id
 |------|------|------|
 | `GET` | `/api/config` | 获取配置（Key 脱敏） |
 | `POST` | `/api/config` | 更新 API URL 和 Key |
-| `POST` | `/api/tts` | 文本转语音 |
-| `GET` | `/api/tts/audio/{filename}` | 下载音频文件 |
+| `POST` | `/api/tts` | 文本转语音，支持 `voice_name` 参数 |
+| `GET` | `/api/tts/audio/{filename}` | 下载 TTS 音频文件 |
 | `POST` | `/api/upload` | 上传文本文件（.txt/.md） |
 | `GET` | `/api/history` | TTS 合成历史（分页） |
-| `GET` | `/api/history/{id}` | 单条历史详情 |
 | `DELETE` | `/api/history/{id}` | 删除记录及音频 |
-| `POST` | `/api/voice/clone` | 上传音频克隆音色 |
-| `POST` | `/api/voice/design` | 提示词生成音色 |
-| `GET` | `/api/voice/clone-list` | 克隆音色列表（分页，支持收藏筛选） |
-| `GET` | `/api/voice/design-list` | 设计音色列表（分页） |
+| `POST` | `/api/voice/clone` | 上传音频克隆音色（返回音频文件） |
+| `POST` | `/api/voice/design` | 提示词生成音色（返回音频文件） |
+| `GET` | `/api/voice/audio/{filename}` | 下载克隆/设计音频 |
+| `GET` | `/api/voice/clone-list` | 克隆记录列表（分页，支持收藏筛选） |
+| `GET` | `/api/voice/design-list` | 设计记录列表（分页） |
 | `GET` | `/api/voice/all` | 所有已保存音色（供合成页下拉） |
 | `PATCH` | `/api/voice/clone/{id}/favorite` | 切换收藏状态 |
-| `DELETE` | `/api/voice/clone/{id}` | 删除克隆记录 |
-| `DELETE` | `/api/voice/design/{id}` | 删除设计记录 |
+| `DELETE` | `/api/voice/clone/{id}` | 删除克隆记录及音频 |
+| `DELETE` | `/api/voice/design/{id}` | 删除设计记录及音频 |
 
 ### POST /api/tts
 
@@ -123,20 +131,24 @@ user 内容为音色描述提示词，assistant 为任意示例文本。voice_id
 {
   "text": "你好世界",
   "voice": "mimo-v2.5-tts",
+  "voice_name": "Mia",
   "speed": 1.0,
   "pitch": 0
 }
 ```
 
+- `voice`: 模型名称
+- `voice_name` (可选): 预设音色名（Mia/Chloe/Milo/Dean）或已保存的克隆/设计音色名。选择克隆音色时自动切换模型并使用参考音频。
+
 ### POST /api/voice/clone
 
-FormData：`audio`（文件）、`model`、`voice_name`（可选）、`ref_text`（可选）
+FormData：`audio`（文件）、`model`、`voice_name`（可选）、`ref_text`（待合成文本）
 
 ### POST /api/voice/design
 
 ```json
 {
-  "model": "voice-design-v1",
+  "model": "mimo-v2.5-tts-voicedesign",
   "prompt": "温柔的女声，音调偏高",
   "voice_name": "温柔女声"
 }
@@ -150,7 +162,7 @@ FormData：`audio`（文件）、`model`、`voice_name`（可选）、`ref_text`
     ├── main.py              # FastAPI 入口
     ├── config.py            # API 配置读写
     ├── database.py          # SQLite（history / clone_voices / design_voices）
-    ├── tts_client.py        # TTS Chat API 客户端
+    ├── tts_client.py        # TTS Chat API 客户端（含音色支持）
     ├── voice_client.py      # 音色克隆 & 设计 API 客户端
     ├── requirements.txt     # Python 依赖
     ├── routers/
