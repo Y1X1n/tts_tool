@@ -77,7 +77,6 @@ py -m uvicorn main:app --host 127.0.0.1 --port 8000
 
 ```
 ├── README.md
-├── tts-studio.exe              # 打包产物
 └── tts_tool/
     ├── main.py                 # FastAPI 入口，uvicorn 启动
     ├── config.py               # API URL / Key 持久化 (JSON)
