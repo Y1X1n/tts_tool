@@ -95,11 +95,21 @@
 
       <!-- Right: Controls -->
       <section class="control-section">
-        <!-- Voice -->
+        <!-- Model -->
+        <div class="control-group">
+          <label class="control-label">模型</label>
+          <div class="select-wrap">
+            <input type="text" id="voiceInput" placeholder="mimo-v2.5-tts" autocomplete="off">
+          </div>
+        </div>
+
+        <!-- Voice selector -->
         <div class="control-group">
           <label class="control-label">音色</label>
           <div class="select-wrap">
-            <input type="text" id="voiceInput" placeholder="输入模型/音色名称" autocomplete="off">
+            <select id="voiceSelect">
+              <option value="">默认音色</option>
+            </select>
           </div>
         </div>
 

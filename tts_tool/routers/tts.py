@@ -12,6 +12,7 @@ router = APIRouter(prefix="/api", tags=["tts"])
 class TTSRequest(BaseModel):
     text: str
     voice: str = "default"
+    voice_name: str = ""
     speed: float = 1.0
     pitch: float = 0.0
 
@@ -25,6 +26,9 @@ class TTSResponse(BaseModel):
     pitch: float
 
 
+PRESET_VOICES = {"mimo_default", "Mia", "Chloe", "Milo", "Dean"}
+
+
 @router.post("/tts")
 async def generate(body: TTSRequest):
     cfg = config.load()
@@ -33,13 +37,31 @@ async def generate(body: TTSRequest):
     if not body.text.strip():
         raise HTTPException(400, "请输入文本")
     if not body.voice.strip():
-        raise HTTPException(400, "请输入模型/音色名称")
+        raise HTTPException(400, "请输入模型名称")
+
+    voice_name = body.voice_name.strip()
+    model = body.voice.strip()
+    ref_audio_path = None
+
+    if voice_name and voice_name not in PRESET_VOICES:
+        # Check if it's a saved clone voice
+        conn = database.get_conn()
+        row = conn.execute(
+            "SELECT ref_audio_path, model FROM clone_voices WHERE voice_id = ? OR voice_name = ? ORDER BY created_at DESC LIMIT 1",
+            [voice_name, voice_name],
+        ).fetchone()
+        conn.close()
+        if row and row["ref_audio_path"] and os.path.exists(row["ref_audio_path"]):
+            ref_audio_path = row["ref_audio_path"]
+            model = row["model"] or "mimo-v2.5-tts-voiceclone"
 
     try:
         async with aiohttp.ClientSession() as session:
             filename = await tts_client.generate_tts(
                 session, cfg["api_url"], cfg["api_key"],
-                body.text, body.voice, body.speed, body.pitch,
+                body.text, model, body.speed, body.pitch,
+                voice_name=voice_name if voice_name in PRESET_VOICES else "",
+                ref_audio_path=ref_audio_path or "",
             )
     except Exception as e:
         raise HTTPException(502, f"TTS API 调用失败: {e}")

@@ -37,23 +37,26 @@ async def generate_tts(
     voice: str = "default",
     speed: float = 1.0,
     pitch: float = 0.0,
+    voice_name: str = "",
+    ref_audio_path: str = "",
 ) -> str:
     """
-    Generate TTS audio from text. Returns the output filename (relative to AUDIO_DIR).
+    Generate TTS audio from text. Returns the output filename.
+    voice_name: preset voice name (Mia, Chloe, etc.)
+    ref_audio_path: path to reference audio for clone voice
     """
     segments = split_text(text)
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
 
     if len(segments) == 1:
-        audio_bytes = await _request_tts(session, api_url, headers, segments[0], voice, speed, pitch)
+        audio_bytes = await _request_tts(session, api_url, headers, segments[0], voice, speed, pitch, voice_name, ref_audio_path)
         filename = f"{uuid.uuid4().hex}.wav"
         filepath = os.path.join(AUDIO_DIR, filename)
         with open(filepath, "wb") as f:
             f.write(audio_bytes)
         return filename
 
-    # Batch: generate segments in parallel, then merge
-    tasks = [_request_tts(session, api_url, headers, seg, voice, speed, pitch) for seg in segments]
+    tasks = [_request_tts(session, api_url, headers, seg, voice, speed, pitch, voice_name, ref_audio_path) for seg in segments]
     results = await asyncio.gather(*tasks, return_exceptions=True)
 
     audio_chunks = []
@@ -78,6 +81,8 @@ async def _request_tts(
     voice: str,
     speed: float,
     pitch: float,
+    voice_name: str = "",
+    ref_audio_path: str = "",
 ) -> bytes:
     """Call TTS API via chat/completions format, decode base64 WAV audio."""
     payload = {
@@ -88,6 +93,19 @@ async def _request_tts(
         ],
         "stream": False,
     }
+
+    if ref_audio_path:
+        ext = ref_audio_path.rsplit(".", 1)[-1].lower() if "." in ref_audio_path else "wav"
+        with open(ref_audio_path, "rb") as f:
+            audio_b64 = base64.b64encode(f.read()).decode("utf-8")
+        payload["audio"] = {
+            "format": "wav",
+            "voice": f"data:audio/{ext};base64,{audio_b64}",
+        }
+        payload["messages"][0]["content"] = ""
+    elif voice_name:
+        payload["audio"] = {"format": "wav", "voice": voice_name}
+
     if speed != 1.0:
         payload["speed"] = speed
     if pitch != 0.0:

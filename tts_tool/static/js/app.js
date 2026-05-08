@@ -38,6 +38,7 @@ const dom = {
 
   // Controls
   voiceInput: $('#voiceInput'),
+  voiceSelect: $('#voiceSelect'),
   speedSlider: $('#speedSlider'),
   speedVal: $('#speedVal'),
   pitchSlider: $('#pitchSlider'),
@@ -143,6 +144,7 @@ async function loadConfig() {
     }
     updateSettingsStatus(!!cfg.api_url && !!cfg.api_key);
   } catch (e) { /* ignore */ }
+  loadVoiceList();
 }
 
 function updateSettingsStatus(configured) {
@@ -234,6 +236,21 @@ function setupControls() {
   });
 }
 
+async function loadVoiceList() {
+  const presets = ['mimo_default', 'Mia', 'Chloe', 'Milo', 'Dean'];
+  let options = '<option value="">默认音色</option>';
+  presets.forEach(v => { options += `<option value="${v}">${v} (预设)</option>`; });
+  try {
+    const res = await fetch('/api/voice/all');
+    const data = await res.json();
+    data.items.forEach(item => {
+      const label = item.voice_name || item.voice_id || '';
+      if (label) options += `<option value="${escapeHtml(item.voice_id || label)}">${escapeHtml(label)} (${item.source})</option>`;
+    });
+  } catch (e) { /* ignore */ }
+  dom.voiceSelect.innerHTML = options;
+}
+
 // ============ Generate ============
 function setupGenerate() {
   dom.generateBtn.addEventListener('click', generate);
@@ -270,7 +287,7 @@ async function generate() {
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice, speed, pitch }),
+      body: JSON.stringify({ text, voice, voice_name: dom.voiceSelect.value, speed, pitch }),
     });
 
     if (!res.ok) {
@@ -559,6 +576,7 @@ async function cloneVoice() {
     dom.cloneAudioPlayer.play();
     showToast('音色克隆完成', 'success');
     fetchCloneList();
+    loadVoiceList();
     // Reset file input
     dom.cloneAudio.value = '';
     dom.cloneFileLabel.textContent = '点击或拖拽上传参考音频';
@@ -713,6 +731,7 @@ async function designVoice() {
     dom.designAudioPlayer.play();
     showToast('音色生成完成', 'success');
     fetchDesignList();
+    loadVoiceList();
   } catch (e) {
     showToast(e.message || '生成失败', 'error');
     dom.designStatusText.textContent = e.message || '生成失败';
