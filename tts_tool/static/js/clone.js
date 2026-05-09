@@ -8,18 +8,25 @@ function setupVoiceClone() {
   });
   dom.cloneUploadZone.addEventListener('click', () => dom.cloneAudio.click());
   dom.cloneAudio.addEventListener('change', () => {
-    const file = dom.cloneAudio.files[0];
-    if (file) { dom.cloneFileLabel.textContent = file.name; dom.cloneUploadZone.classList.add('has-file'); }
+    const count = dom.cloneAudio.files.length;
+    if (count === 1) {
+      dom.cloneFileLabel.textContent = dom.cloneAudio.files[0].name;
+    } else if (count > 1) {
+      dom.cloneFileLabel.textContent = `已选择 ${count} 个音频文件`;
+    }
+    if (count > 0) dom.cloneUploadZone.classList.add('has-file');
   });
   dom.cloneUploadZone.addEventListener('dragover', e => { e.preventDefault(); dom.cloneUploadZone.classList.add('dragover'); });
   dom.cloneUploadZone.addEventListener('dragleave', () => dom.cloneUploadZone.classList.remove('dragover'));
   dom.cloneUploadZone.addEventListener('drop', e => {
     e.preventDefault();
     dom.cloneUploadZone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('audio/')) {
-      dom.cloneAudio.files = e.dataTransfer.files;
-      dom.cloneFileLabel.textContent = file.name;
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('audio/'));
+    if (files.length > 0) {
+      const dt = new DataTransfer();
+      files.forEach(f => dt.items.add(f));
+      dom.cloneAudio.files = dt.files;
+      dom.cloneFileLabel.textContent = files.length === 1 ? files[0].name : `已选择 ${files.length} 个音频文件`;
       dom.cloneUploadZone.classList.add('has-file');
     }
   });
@@ -38,51 +45,88 @@ function setupVoiceClone() {
 async function cloneVoice() {
   const model = dom.cloneModel.value.trim();
   if (!model) { showToast('请输入模型名称', 'error'); return; }
-  const file = dom.cloneAudio.files[0];
-  if (!file) { showToast('请上传参考音频', 'error'); return; }
+  const files = Array.from(dom.cloneAudio.files);
+  if (files.length === 0) { showToast('请上传参考音频', 'error'); return; }
+
+  const baseVoiceName = dom.cloneName.value.trim();
+  const refText = dom.cloneRefText.value.trim();
+  const btnOriginal = dom.cloneBtn.innerHTML;
+  const multi = files.length > 1;
 
   dom.cloneBtn.classList.add('generating');
-  dom.cloneBtn.innerHTML = `<span class="status-spinner"></span> 克隆中...`;
   dom.cloneStatusBar.hidden = false;
-  dom.cloneStatusText.textContent = '正在克隆音色...';
   dom.cloneStatusSpinner.hidden = false;
 
-  const form = new FormData();
-  form.append('audio', file);
-  form.append('model', model);
-  form.append('voice_name', dom.cloneName.value.trim());
-  form.append('ref_text', dom.cloneRefText.value.trim());
+  let completed = 0;
+  let failed = 0;
 
-  try {
-    const res = await fetch('/api/voice/clone', { method: 'POST', body: form });
-    if (!res.ok) {
-      let msg = `请求失败 (HTTP ${res.status})`;
-      try { const err = await res.json(); msg = err.detail || msg; } catch (_) {}
-      throw new Error(msg);
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    let voiceName = baseVoiceName;
+    if (multi) {
+      voiceName = baseVoiceName
+        ? `${baseVoiceName} #${i + 1}`
+        : file.name.replace(/\.[^.]+$/, '');
+    } else if (!voiceName) {
+      voiceName = file.name.replace(/\.[^.]+$/, '');
     }
-    const data = await res.json();
-    dom.cloneStatusText.textContent = '克隆完成';
-    const src = `/api/voice/audio/${data.filename}`;
-    dom.cloneAudioPlayer.src = src;
-    dom.cloneDownloadLink.href = src;
-    dom.cloneDownloadLink.download = data.filename;
-    dom.clonePlayerCard.hidden = false;
-    dom.cloneAudioPlayer.play();
-    showToast('音色克隆完成', 'success');
+
+    dom.cloneStatusText.textContent = `正在克隆 ${i + 1}/${files.length}: ${file.name}`;
+    dom.cloneBtn.innerHTML = `<span class="status-spinner"></span> 克隆中 (${i + 1}/${files.length})`;
+
+    const form = new FormData();
+    form.append('audio', file);
+    form.append('model', model);
+    form.append('voice_name', voiceName);
+    form.append('ref_text', refText);
+
+    try {
+      const res = await fetch('/api/voice/clone', { method: 'POST', body: form });
+      if (!res.ok) {
+        let msg = `请求失败 (HTTP ${res.status})`;
+        try { const err = await res.json(); msg = err.detail || msg; } catch (_) {}
+        throw new Error(msg);
+      }
+      const data = await res.json();
+      completed++;
+      if (i === files.length - 1) {
+        const src = `/api/voice/audio/${data.filename}`;
+        dom.cloneAudioPlayer.src = src;
+        dom.cloneDownloadLink.href = src;
+        dom.cloneDownloadLink.download = data.filename;
+        dom.clonePlayerCard.hidden = false;
+        dom.cloneAudioPlayer.play();
+      }
+    } catch (e) {
+      failed++;
+      console.error(`Clone failed for ${file.name}:`, e);
+    }
+  }
+
+  if (failed === 0) {
+    dom.cloneStatusText.textContent = multi ? `全部完成 (${completed} 个音色)` : '克隆完成';
+    showToast(multi ? `${completed} 个音色克隆完成` : '音色克隆完成', 'success');
+  } else if (completed > 0) {
+    dom.cloneStatusText.textContent = `部分完成 (${completed}/${files.length})`;
+    showToast(`${completed} 个成功, ${failed} 个失败`, 'error');
+  } else {
+    dom.cloneStatusText.textContent = '克隆全部失败';
+    showToast('克隆全部失败', 'error');
+  }
+
+  dom.cloneBtn.classList.remove('generating');
+  dom.cloneBtn.innerHTML = btnOriginal;
+  dom.cloneStatusSpinner.hidden = true;
+  if (completed > 0) {
     fetchCloneList();
     loadVoiceList();
-    dom.cloneAudio.value = '';
-    dom.cloneFileLabel.textContent = '点击或拖拽上传参考音频';
-    dom.cloneUploadZone.classList.remove('has-file');
-  } catch (e) {
-    showToast(e.message || '克隆失败', 'error');
-    dom.cloneStatusText.textContent = e.message || '克隆失败';
-  } finally {
-    dom.cloneBtn.classList.remove('generating');
-    dom.cloneBtn.innerHTML = `<span class="btn-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></span> 开始克隆`;
-    dom.cloneStatusSpinner.hidden = true;
-    setTimeout(() => { if (dom.cloneStatusText.textContent === '克隆完成') dom.cloneStatusBar.hidden = true; }, 4000);
   }
+  dom.cloneAudio.value = '';
+  dom.cloneFileLabel.textContent = '点击或拖拽上传参考音频';
+  dom.cloneUploadZone.classList.remove('has-file');
+  setTimeout(() => {
+    if (dom.cloneStatusText.textContent.includes('完成')) dom.cloneStatusBar.hidden = true;
+  }, 4000);
 }
 
 async function fetchCloneList(page = 1) {

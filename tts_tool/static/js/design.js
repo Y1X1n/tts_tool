@@ -111,6 +111,7 @@ async function deleteVoiceItem(id, type) {
       showToast('已删除', 'success');
       if (type === 'clone') fetchCloneList(state.clonePage);
       else fetchDesignList(state.designPage);
+      loadVoiceList();
     } else { showToast('删除失败', 'error'); }
   } catch (e) { showToast('删除失败', 'error'); }
 }

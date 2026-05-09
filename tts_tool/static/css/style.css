@@ -7,6 +7,7 @@
   --bg-panel:      #111114;
   --bg-card:       #18181c;
   --bg-input:      #1e1e22;
+  --bg-elevated:   #1c1c22;
   --bg-hover:      #232329;
   --border:        #2a2a30;
   --border-light:  #353540;
@@ -29,6 +30,8 @@
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }
+
+[hidden] { display: none !important; }
 
 html, body {
   height: 100%;
@@ -650,6 +653,17 @@ input[type="range"]::-webkit-slider-thumb:hover {
   width: 28px;
 }
 
+.history-item .hi-type {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 99px;
+  flex-shrink: 0;
+  font-weight: 500;
+}
+.hi-type--tts  { color: #7dd3fc; background: rgba(125,211,252,0.12); }
+.hi-type--clone { color: #f0a040; background: rgba(240,160,64,0.12); }
+.hi-type--design { color: #4ade80; background: rgba(74,222,128,0.12); }
+
 .history-item .hi-text {
   flex: 1;
   font-size: 14px;
@@ -769,7 +783,6 @@ input[type="range"]::-webkit-slider-thumb:hover {
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
-  margin-top: 16px;
   color: var(--text-muted);
 }
 
@@ -820,12 +833,13 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 /* ---- Voice List ---- */
 .voice-list {
-  margin-top: 20px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 400px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  padding-top: 4px;
 }
 
 .voice-item {

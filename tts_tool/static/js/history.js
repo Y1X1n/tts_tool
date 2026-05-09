@@ -1,10 +1,12 @@
 /* ============================================
-   TTS Studio — History
+   TTS Studio — History (TTS + Clone + Design)
    ============================================ */
 
 function setupHistory() {
   // loaded on tab switch
 }
+
+const TYPE_LABEL = { tts: '合成', clone: '克隆', design: '设计' };
 
 async function fetchHistory(page = 1) {
   state.historyPage = page;
@@ -23,14 +25,15 @@ async function fetchHistory(page = 1) {
     dom.historyList.innerHTML = data.items.map((item, i) => `
       <div class="history-item">
         <span class="hi-index">#${(page - 1) * 20 + i + 1}</span>
-        <span class="hi-text" title="${escapeHtml(item.text)}">${escapeHtml(item.text.slice(0, 60))}</span>
-        <span class="hi-voice">${escapeHtml(item.voice)}</span>
+        <span class="hi-type hi-type--${item.type}">${TYPE_LABEL[item.type] || item.type}</span>
+        <span class="hi-text" title="${escapeHtml(item.text || '')}">${escapeHtml((item.text || '').slice(0, 60))}</span>
+        <span class="hi-voice">${escapeHtml(item.voice || '')}</span>
         <span class="hi-time">${formatTime(item.created_at)}</span>
         <div class="hi-actions">
-          <button class="btn btn-ghost btn-sm play-btn" data-filename="${escapeHtml(item.filename)}" title="播放">
+          ${item.filename ? `<button class="btn btn-ghost btn-sm play-btn" data-type="${item.type}" data-filename="${escapeHtml(item.filename)}" title="播放">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5,3 19,12 5,21"/></svg>
-          </button>
-          <button class="btn btn-danger delete-btn" data-id="${item.id}" title="删除">
+          </button>` : ''}
+          <button class="btn btn-danger delete-btn" data-id="${escapeHtml(item.id)}" title="删除">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
           </button>
         </div>
@@ -38,7 +41,7 @@ async function fetchHistory(page = 1) {
     `).join('');
 
     $$('.play-btn', dom.historyList).forEach(btn => {
-      btn.addEventListener('click', () => playHistoryItem(btn.dataset.filename));
+      btn.addEventListener('click', () => playHistoryItem(btn.dataset.type, btn.dataset.filename));
     });
     $$('.delete-btn', dom.historyList).forEach(btn => {
       btn.addEventListener('click', () => deleteHistoryItem(btn.dataset.id));
@@ -50,8 +53,9 @@ async function fetchHistory(page = 1) {
   }
 }
 
-function playHistoryItem(filename) {
-  dom.audioPlayer.src = `/api/tts/audio/${filename}`;
+function playHistoryItem(type, filename) {
+  const base = type === 'tts' ? '/api/tts/audio/' : '/api/voice/audio/';
+  dom.audioPlayer.src = base + filename;
   dom.playerCard.hidden = false;
   dom.audioPlayer.play();
   dom.tabs[0].click();
@@ -64,7 +68,8 @@ async function deleteHistoryItem(id) {
       showToast('已删除', 'success');
       fetchHistory(state.historyPage);
     } else {
-      showToast('删除失败', 'error');
+      const err = await res.json();
+      showToast(err.detail || '删除失败', 'error');
     }
   } catch (e) {
     showToast('删除失败', 'error');

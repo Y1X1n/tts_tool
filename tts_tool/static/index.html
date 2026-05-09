@@ -173,27 +173,27 @@
 
   <!-- ========== CLONE TAB ========== -->
   <main class="panel" id="panel-clone">
-    <div class="generate-layout">
+    <div class="generate-layout" style="flex: 0 0 auto; min-height: auto;">
       <section class="input-section">
-        <div class="text-area-wrap">
+        <div class="text-area-wrap" style="flex: none;">
           <div class="text-area-toolbar">
             <span>模型名称</span>
           </div>
           <input type="text" id="cloneModel" class="clone-model-input" placeholder="mimo-v2.5-tts-voiceclone" autocomplete="off">
         </div>
-        <div class="text-area-wrap" style="margin-top:16px;">
+        <div class="text-area-wrap" style="flex: none;">
           <div class="text-area-toolbar">
             <span>音色名称（可选）</span>
           </div>
           <input type="text" id="cloneName" class="clone-model-input" placeholder="为音色取个名字" autocomplete="off">
         </div>
         <div class="upload-zone" id="cloneUploadZone">
-          <input type="file" id="cloneAudio" accept="audio/*" hidden>
+          <input type="file" id="cloneAudio" accept="audio/*" multiple hidden>
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17,8 12,3 7,8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
           <p id="cloneFileLabel">点击或拖拽上传参考音频</p>
-          <span class="upload-hint">支持 wav, mp3, m4a, ogg, flac</span>
+          <span class="upload-hint">支持 wav, mp3, m4a, ogg, flac，可多选</span>
         </div>
-        <div class="text-area-wrap" style="margin-top:16px;">
+        <div class="text-area-wrap" style="flex: none;">
           <div class="text-area-toolbar">
             <span class="char-count" id="cloneCharCount">0 字</span>
           </div>
@@ -237,21 +237,21 @@
 
   <!-- ========== DESIGN TAB ========== -->
   <main class="panel" id="panel-design">
-    <div class="generate-layout">
+    <div class="generate-layout" style="flex: 0 0 auto; min-height: auto;">
       <section class="input-section">
-        <div class="text-area-wrap">
+        <div class="text-area-wrap" style="flex: none;">
           <div class="text-area-toolbar">
             <span>模型名称</span>
           </div>
           <input type="text" id="designModel" class="clone-model-input" placeholder="mimo-v2.5-tts-voicedesign" autocomplete="off">
         </div>
-        <div class="text-area-wrap" style="margin-top:16px;">
+        <div class="text-area-wrap" style="flex: none;">
           <div class="text-area-toolbar">
             <span>音色名称（可选）</span>
           </div>
           <input type="text" id="designName" class="clone-model-input" placeholder="为音色取个名字" autocomplete="off">
         </div>
-        <div class="text-area-wrap" style="margin-top:16px;">
+        <div class="text-area-wrap" style="flex: none;">
           <div class="text-area-toolbar">
             <span class="char-count" id="designCharCount">0 字</span>
           </div>
