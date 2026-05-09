@@ -2,7 +2,7 @@
 
 基于 Chat Completions 协议的语音工具，提供语音合成、音色克隆、音色设计三大功能，统一历史管理。
 
-模型预设以 Mimo TTS 为例（免费模型，注册地址：https://platform.xiaomimimo.com）
+模型预设以 Mimo TTS 为例(免费模型，注册地址：https://platform.xiaomimimo.com)
 
 ---
 
