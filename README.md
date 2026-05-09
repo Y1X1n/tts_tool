@@ -1,6 +1,7 @@
 # TTS Studio
 
 基于 Chat Completions 协议的语音工具，提供语音合成、音色克隆、音色设计三大功能。
+(至于为什么模型预设是Mimo 因为Mimo的TTS模型免费 跳转链接:https://platform.xiaomimimo.com)
 
 ---
 
