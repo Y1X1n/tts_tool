@@ -44,13 +44,11 @@ async def generate(body: TTSRequest):
     ref_audio_path = None
 
     if voice_name and voice_name not in PRESET_VOICES:
-        # Check if it's a saved clone voice
-        conn = database.get_conn()
-        row = conn.execute(
-            "SELECT ref_audio_path, model FROM clone_voices WHERE voice_id = ? OR voice_name = ? ORDER BY created_at DESC LIMIT 1",
-            [voice_name, voice_name],
-        ).fetchone()
-        conn.close()
+        with database.connect() as conn:
+            row = conn.execute(
+                "SELECT ref_audio_path, model FROM clone_voices WHERE voice_id = ? OR voice_name = ? ORDER BY created_at DESC LIMIT 1",
+                [voice_name, voice_name],
+            ).fetchone()
         if row and row["ref_audio_path"] and os.path.exists(row["ref_audio_path"]):
             ref_audio_path = row["ref_audio_path"]
             model = row["model"] or "mimo-v2.5-tts-voiceclone"
@@ -66,14 +64,12 @@ async def generate(body: TTSRequest):
     except Exception as e:
         raise HTTPException(502, f"TTS API 调用失败: {e}")
 
-    conn = database.get_conn()
-    cur = conn.execute(
-        "INSERT INTO history (text, voice, speed, pitch, filename) VALUES (?, ?, ?, ?, ?)",
-        [body.text, body.voice, body.speed, body.pitch, filename],
-    )
-    row_id = cur.lastrowid
-    conn.commit()
-    conn.close()
+    with database.connect() as conn:
+        cur = conn.execute(
+            "INSERT INTO history (text, voice, speed, pitch, filename) VALUES (?, ?, ?, ?, ?)",
+            [body.text, body.voice, body.speed, body.pitch, filename],
+        )
+        row_id = cur.lastrowid
 
     return TTSResponse(id=row_id, filename=filename, text=body.text, voice=body.voice, speed=body.speed, pitch=body.pitch)
 

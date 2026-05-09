@@ -66,12 +66,51 @@ async def generate_tts(
             raise RuntimeError(f"Segment {i + 1} failed: {r}")
         audio_chunks.append(r)
 
-    merged = b"".join(audio_chunks)
+    merged = _merge_wav(audio_chunks)
     filename = f"{uuid.uuid4().hex}.wav"
     filepath = os.path.join(AUDIO_DIR, filename)
     with open(filepath, "wb") as f:
         f.write(merged)
     return filename
+
+
+def _merge_wav(chunks: list[bytes]) -> bytes:
+    """Merge multiple WAV byte chunks into a single valid WAV file."""
+    if len(chunks) == 1:
+        return chunks[0]
+
+    # Parse first WAV header
+    first = chunks[0]
+    pcm_data = _extract_pcm(first)
+
+    for chunk in chunks[1:]:
+        pcm_data += _extract_pcm(chunk)
+
+    sample_rate = int.from_bytes(first[24:28], 'little')
+    bits_per_sample = int.from_bytes(first[34:36], 'little')
+    num_channels = int.from_bytes(first[22:24], 'little')
+    byte_rate = sample_rate * num_channels * bits_per_sample // 8
+    block_align = num_channels * bits_per_sample // 8
+    data_size = len(pcm_data)
+
+    header = struct.pack(
+        '<4sI4s4sIHHIIHH4sI',
+        b'RIFF', 36 + data_size,
+        b'WAVE', b'fmt ', 16,
+        1, num_channels, sample_rate, byte_rate, block_align, bits_per_sample,
+        b'data', data_size,
+    )
+    return header + pcm_data
+
+
+def _extract_pcm(wav_bytes: bytes) -> bytes:
+    """Extract raw PCM data from WAV bytes."""
+    # Find "data" chunk
+    idx = wav_bytes.find(b'data')
+    if idx == -1:
+        return wav_bytes
+    # Skip "data" marker (4 bytes) + size field (4 bytes)
+    return wav_bytes[idx + 8:]
 
 
 async def _request_tts(
